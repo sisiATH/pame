@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>πάμε</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<style>
+  body { margin: 0; background: #fafaf6; font-family: 'DM Sans', sans-serif; color: #1e3a5f; }
+  .px-loading { display: grid; place-items: center; min-height: 100vh; color: #8b9aab; font-style: italic; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="px-loading">opening πάμε…</div>
+</div>
+
+<!-- ╔═══════════════════════════════════════════════════════════════╗
+     ║  CONFIG — paste your Supabase URL + anon key here             ║
+     ║  Get them from: Supabase → Project Settings → API             ║
+     ╚═══════════════════════════════════════════════════════════════╝ -->
+<script>
+  window.SUPABASE_URL      = "https://dzygbydsavqgbsgjyywu.supabase.co";
+  window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eWdieWRzYXZxZ2JzZ2p5eXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMDY0NDEsImV4cCI6MjA5MzY4MjQ0MX0.5d-fTBFR9jloDqRQ_oDCwkHps-amApBG0wYclN4HSMk";
+</script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useCallback } = React;
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+// ═══════════════════════════════════════════════════════════════════════
+// ICONS (inline SVGs — replaces lucide-react)
+// ═══════════════════════════════════════════════════════════════════════
+const Sv = ({ size = 16, color = 'currentColor', strokeWidth = 2, style, className, children }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+       fill="none" stroke={color} strokeWidth={strokeWidth}
+       strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+    {children}
+  </svg>
+);
+const Plus = (p) => <Sv {...p}><path d="M12 5v14M5 12h14"/></Sv>;
+const X = (p) => <Sv {...p}><path d="M18 6 6 18M6 6l12 12"/></Sv>;
+const ChevronLeft = (p) => <Sv {...p}><path d="m15 18-6-6 6-6"/></Sv>;
+const ChevronRight = (p) => <Sv {...p}><path d="m9 18 6-6-6-6"/></Sv>;
+const CalIcon = (p) => <Sv {...p}><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></Sv>;
+const List = (p) => <Sv {...p}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></Sv>;
+const Bookmark = (p) => <Sv {...p}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></Sv>;
+const MapPin = (p) => <Sv {...p}><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></Sv>;
+const Clock = (p) => <Sv {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></Sv>;
+const ExternalLink = (p) => <Sv {...p}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></Sv>;
+const Trash2 = (p) => <Sv {...p}><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></Sv>;
+const Edit2 = (p) => <Sv {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Sv>;
+const Check = (p) => <Sv {...p}><path d="M20 6 9 17l-5-5"/></Sv>;
+const RefreshCw = (p) => <Sv {...p}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16M16 16h5v5"/></Sv>;
+const LinkIcon = (p) => <Sv {...p}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Sv>;
+const Cake = (p) => <Sv {...p}><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3M12 8v3M17 8v3"/><path d="M7 4h.01M12 4h.01M17 4h.01"/></Sv>;
+const Sparkles = (p) => <Sv {...p}><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/><path d="M5 3v4M19 17v4M3 5h4M17 19h4"/></Sv>;
+const Ticket = (p) => <Sv {...p}><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/></Sv>;
+const UtensilsCrossed = (p) => <Sv {...p}><path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"/><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"/><path d="m2.1 21.8 6.4-6.3"/><path d="m19 5-7 7"/></Sv>;
+const Compass = (p) => <Sv {...p}><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.4 2.1 2.1-6.3 6.4-2.1z"/></Sv>;
+const Instagram = (p) => <Sv {...p}><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.4A4 4 0 1 1 12.6 8 4 4 0 0 1 16 11.4z"/><path d="M17.5 6.5h.01"/></Sv>;
+const Users = (p) => <Sv {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Sv>;
+const PartyPopper = (p) => <Sv {...p}><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-1.46.46c-.79.25-1.32.99-1.32 1.81v.42c0 .79-.59 1.43-1.36 1.49a2 2 0 0 0-1.7 2.79l.43 1"/><path d="m11 13-1.16-3.4a3 3 0 0 0-1.97-1.97L4.5 6.5"/></Sv>;
+const Vote = (p) => <Sv {...p}><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></Sv>;
+
+// ═══════════════════════════════════════════════════════════════════════
+// PALETTE
+// ═══════════════════════════════════════════════════════════════════════
+const C = {
+  bg:        '#fafaf6',
+  paper:     '#ffffff',
+  paperSoft: '#f3f1ec',
+  ink:       '#1e3a5f',
+  inkSoft:   '#4a6585',
+  muted:     '#8b9aab',
+  hairline:  'rgba(30, 58, 95, 0.12)',
+  accent:    '#2c5f8d',
+  birthday:   '#e85d75',
+  nameday:    '#c89030',
+  event:      '#2c5f8d',
+  restaurant: '#1f7a78',
+  outing:     '#4a8d52',
+  holiday:    '#7d5a99',
+  celebTop:    '#fff4e8',
+  celebBottom: '#ffe6ec',
+  celebInk:    '#7a2941',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// CATEGORIES
+// ═══════════════════════════════════════════════════════════════════════
+const CATS = {
+  birthday:   { label: 'Birthday',   plural: 'Birthdays',   icon: Cake,            color: C.birthday,   recurring: true,  rsvp: false, system: false },
+  nameday:    { label: 'Name Day',   plural: 'Name Days',   icon: Sparkles,        color: C.nameday,    recurring: true,  rsvp: false, system: false },
+  event:      { label: 'Event',      plural: 'Events',      icon: Ticket,          color: C.event,      recurring: false, rsvp: true,  system: false },
+  restaurant: { label: 'Restaurant', plural: 'Restaurants', icon: UtensilsCrossed, color: C.restaurant, recurring: false, rsvp: true,  system: false },
+  outing:     { label: 'Outing',     plural: 'Outings',     icon: Compass,         color: C.outing,     recurring: false, rsvp: true,  system: false },
+  holiday:    { label: 'Holiday',    plural: 'Holidays',    icon: PartyPopper,     color: C.holiday,    recurring: true,  rsvp: false, system: true  },
+};
+const CAT_KEYS = Object.keys(CATS);
+const USER_CATS = CAT_KEYS.filter(k => !CATS[k].system);
+
+// ═══════════════════════════════════════════════════════════════════════
+// GREEK ORTHODOX EASTER (hardcoded)
+// ═══════════════════════════════════════════════════════════════════════
+const GREEK_EASTER = {
+  2025: '2025-04-20', 2026: '2026-04-12', 2027: '2027-05-02', 2028: '2028-04-16',
+  2029: '2029-04-08', 2030: '2030-04-28', 2031: '2031-04-13', 2032: '2032-05-02',
+  2033: '2033-04-24', 2034: '2034-04-09', 2035: '2035-04-29',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// GREEK NAME DAYS
+// ═══════════════════════════════════════════════════════════════════════
+const NAME_DAYS = {
+  vasilis:'01-01', vasiliki:'01-01', basil:'01-01',
+  yannis:'01-07', giannis:'01-07', ioannis:'01-07', john:'01-07', ioanna:'01-07',
+  antonis:'01-17', antonia:'01-17', anthony:'01-17',
+  athanasios:'01-18', athanasia:'01-18', thanos:'01-18', nasos:'01-18',
+  haralambos:'02-10', babis:'02-10',
+  evangelos:'03-25', evangelia:'03-25', vangelis:'03-25', eva:'03-25',
+  giorgos:'04-23', george:'04-23', giorgia:'04-23', georgia:'04-23', georgios:'04-23',
+  irini:'05-05', eirini:'05-05', irene:'05-05',
+  konstantinos:'05-21', kostas:'05-21', eleni:'05-21', helen:'05-21', helena:'05-21', kostantina:'05-21',
+  petros:'06-29', peter:'06-29', pavlos:'06-29', paul:'06-29', paulina:'06-29',
+  paraskevi:'07-26', voula:'07-26',
+  maria:'08-15', mary:'08-15', marios:'08-15', panagiotis:'08-15', panagiota:'08-15',
+  panos:'08-15', giota:'08-15', maro:'08-15',
+  sophia:'09-17', sofia:'09-17', stavros:'09-14', stavroula:'09-14',
+  dimitris:'10-26', dimitra:'10-26', mimis:'10-26', dimi:'10-26',
+  michalis:'11-08', mihalis:'11-08', michael:'11-08', angelos:'11-08', angeliki:'11-08', angela:'11-08',
+  katerina:'11-25', ekaterini:'11-25', katherine:'11-25', kate:'11-25',
+  andreas:'11-30', andrew:'11-30', andriana:'11-30',
+  varvara:'12-04', barbara:'12-04',
+  nikolaos:'12-06', nikos:'12-06', nicholas:'12-06', nick:'12-06', nicoletta:'12-06',
+  anna:'12-09', annie:'12-09',
+  spyros:'12-12', spiros:'12-12', spyridon:'12-12', spyridoula:'12-12',
+  christos:'12-25', christina:'12-25', chris:'12-25', christiana:'12-25',
+  stefanos:'12-27', stefania:'12-27', stephen:'12-27', stephanie:'12-27',
+};
+
+const GREEK_FORM = {
+  vasilis:'Βασίλης', vasiliki:'Βασιλική', yannis:'Γιάννης', giannis:'Γιάννης', ioanna:'Ιωάννα',
+  antonis:'Αντώνης', athanasios:'Αθανάσιος', thanos:'Θάνος', evangelos:'Ευάγγελος', evangelia:'Ευαγγελία',
+  giorgos:'Γιώργος', georgia:'Γεωργία', irini:'Ειρήνη', konstantinos:'Κωνσταντίνος', kostas:'Κώστας',
+  eleni:'Ελένη', petros:'Πέτρος', pavlos:'Παύλος', paraskevi:'Παρασκευή',
+  maria:'Μαρία', panagiotis:'Παναγιώτης', panagiota:'Παναγιώτα', sofia:'Σοφία', stavros:'Σταύρος',
+  dimitris:'Δημήτρης', dimitra:'Δήμητρα', michalis:'Μιχάλης', angelos:'Άγγελος', angeliki:'Αγγελική',
+  katerina:'Κατερίνα', andreas:'Ανδρέας', nikolaos:'Νικόλαος', nikos:'Νίκος', anna:'Άννα',
+  spyros:'Σπύρος', christos:'Χρήστος', christina:'Χριστίνα', stefanos:'Στέφανος', stefania:'Στεφανία',
+  varvara:'Βαρβάρα',
+};
+
+function findNameDay(name) {
+  if (!name) return null;
+  const first = name.toLowerCase().trim().split(/\s+/)[0].replace(/[^a-zα-ω]/gi, '');
+  const md = NAME_DAYS[first];
+  if (!md) return null;
+  const [m, d] = md.split('-').map(Number);
+  return { key: first, month: m, day: d, greek: GREEK_FORM[first] || name };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DATE HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW    = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const pad    = n => String(n).padStart(2, '0');
+const ymd    = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today  = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+
+function parseYMD(s) {
+  if (!s) return null;
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function fmtLong(d) {
+  if (!d) return '';
+  return `${DOW[(d.getDay()+6)%7]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+function startOfMonthGrid(year, month) {
+  const first = new Date(year, month, 1);
+  const offset = (first.getDay() + 6) % 7;
+  return new Date(year, month, 1 - offset);
+}
+function nextOccurrence(it, from = today()) {
+  if (CATS[it.type]?.recurring) {
+    const y = from.getFullYear();
+    const thisYear = new Date(y, (it.month || 1) - 1, it.day || 1);
+    if (thisYear >= from) return thisYear;
+    return new Date(y + 1, (it.month || 1) - 1, it.day || 1);
+  }
+  if (!it.date) return null;
+  const d = parseYMD(it.date);
+  return d >= from ? d : null;
+}
+function occurrencesForMonth(items, year, month) {
+  const out = [];
+  for (const it of items) {
+    if (CATS[it.type]?.recurring) {
+      if (it.month === month + 1) out.push({ ...it, displayDate: new Date(year, month, it.day) });
+    } else if (it.date) {
+      const d = parseYMD(it.date);
+      if (d.getFullYear() === year && d.getMonth() === month) out.push({ ...it, displayDate: d });
+    }
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// GREEK PUBLIC HOLIDAYS (computed client-side, not stored in DB)
+// ═══════════════════════════════════════════════════════════════════════
+function greekHolidaysForYear(year) {
+  const easter = GREEK_EASTER[year] ? parseYMD(GREEK_EASTER[year]) : null;
+  const offset = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return ymd(x); };
+  const fixed = [
+    { id: `hol-${year}-01-01`, title: 'Πρωτοχρονιά',          subtitle: "New Year's Day",     date: `${year}-01-01` },
+    { id: `hol-${year}-01-06`, title: 'Θεοφάνια',              subtitle: 'Epiphany',           date: `${year}-01-06` },
+    { id: `hol-${year}-03-25`, title: '25η Μαρτίου',           subtitle: 'Independence Day',   date: `${year}-03-25` },
+    { id: `hol-${year}-05-01`, title: 'Πρωτομαγιά',            subtitle: 'Labour Day',         date: `${year}-05-01` },
+    { id: `hol-${year}-08-15`, title: 'Δεκαπενταύγουστος',     subtitle: 'Assumption of Mary', date: `${year}-08-15` },
+    { id: `hol-${year}-10-28`, title: 'Ημέρα του Όχι',         subtitle: '"No" Day',           date: `${year}-10-28` },
+    { id: `hol-${year}-12-25`, title: 'Χριστούγεννα',          subtitle: 'Christmas',          date: `${year}-12-25` },
+    { id: `hol-${year}-12-26`, title: 'Σύναξη Θεοτόκου',       subtitle: 'Boxing Day',         date: `${year}-12-26` },
+  ];
+  if (easter) {
+    fixed.push(
+      { id: `hol-${year}-cm`, title: 'Καθαρά Δευτέρα',     subtitle: 'Clean Monday',  date: offset(easter, -48) },
+      { id: `hol-${year}-gf`, title: 'Μεγάλη Παρασκευή',   subtitle: 'Good Friday',   date: offset(easter, -2)  },
+      { id: `hol-${year}-pa`, title: 'Πάσχα',              subtitle: 'Easter Sunday', date: ymd(easter)         },
+      { id: `hol-${year}-pm`, title: 'Δευτέρα του Πάσχα',  subtitle: 'Easter Monday', date: offset(easter, 1)   },
+      { id: `hol-${year}-hs`, title: 'Αγίου Πνεύματος',    subtitle: 'Holy Spirit',   date: offset(easter, 50)  },
+    );
+  }
+  return fixed.map(h => ({
+    ...h, type: 'holiday', system: true, addedBy: 'system', rsvps: {}, createdAt: 0,
+    notes: h.subtitle, location: '', link: '',
+  }));
+}
+function allHolidays() {
+  const y = new Date().getFullYear();
+  return [...greekHolidaysForYear(y - 1), ...greekHolidaysForYear(y), ...greekHolidaysForYear(y + 1)];
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SUPABASE DATA LAYER
+// ═══════════════════════════════════════════════════════════════════════
+// Map between DB (snake_case) and JS (camelCase)
+function fromDb(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    date: row.date,
+    time: row.time,
+    month: row.month,
+    day: row.day,
+    location: row.location || '',
+    link: row.link || '',
+    notes: row.notes || '',
+    greek: row.greek,
+    addedBy: row.added_by,
+    createdAt: row.created_at,
+    rsvps: row.rsvps || {},
+  };
+}
+function toDb(item) {
+  return {
+    id: item.id,
+    type: item.type,
+    title: item.title,
+    date: item.date || null,
+    time: item.time || null,
+    month: item.month || null,
+    day: item.day || null,
+    location: item.location || '',
+    link: item.link || '',
+    notes: item.notes || '',
+    greek: item.greek || null,
+    added_by: item.addedBy,
+    created_at: item.createdAt,
+    rsvps: item.rsvps || {},
+  };
+}
+
+async function dbLoadAll() {
+  const { data, error } = await sb.from('items').select('*');
+  if (error) { console.error(error); return []; }
+  return data.map(fromDb);
+}
+async function dbInsert(item) {
+  const { error } = await sb.from('items').insert([toDb(item)]);
+  if (error) console.error(error);
+}
+async function dbUpdate(id, patch) {
+  // Only patch the fields provided. Convert camelCase if present.
+  const dbPatch = {};
+  if ('title' in patch) dbPatch.title = patch.title;
+  if ('type' in patch) dbPatch.type = patch.type;
+  if ('date' in patch) dbPatch.date = patch.date || null;
+  if ('time' in patch) dbPatch.time = patch.time || null;
+  if ('month' in patch) dbPatch.month = patch.month || null;
+  if ('day' in patch) dbPatch.day = patch.day || null;
+  if ('location' in patch) dbPatch.location = patch.location || '';
+  if ('link' in patch) dbPatch.link = patch.link || '';
+  if ('notes' in patch) dbPatch.notes = patch.notes || '';
+  if ('greek' in patch) dbPatch.greek = patch.greek || null;
+  if ('rsvps' in patch) dbPatch.rsvps = patch.rsvps || {};
+  const { error } = await sb.from('items').update(dbPatch).eq('id', id);
+  if (error) console.error(error);
+}
+async function dbDelete(id) {
+  const { error } = await sb.from('items').delete().eq('id', id);
+  if (error) console.error(error);
+}
+
+const newId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const isInstagram = url => /instagram\.com/i.test(url || '');
+
+// User name lives per-device in localStorage
+const USER_KEY = 'pame:user';
+const loadUser = () => { try { const v = localStorage.getItem(USER_KEY); return v ? JSON.parse(v) : null; } catch { return null; } };
+const saveUser = (name) => { try { localStorage.setItem(USER_KEY, JSON.stringify({ name })); } catch {} };
+
+// ═══════════════════════════════════════════════════════════════════════
+// FONTS + GLOBAL STYLES
+// ═══════════════════════════════════════════════════════════════════════
+const FONTS = `
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body { margin: 0; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  @keyframes shimmer { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  .px-fade { animation: fadeIn 0.25s ease-out both; }
+  .px-pop  { animation: pop 0.18s ease-out both; }
+  .px-shimmer { animation: shimmer 1.6s ease-in-out infinite; transform-origin: 50% 70%; }
+  .px-day:hover { background: rgba(44, 95, 141, 0.05); }
+  .px-day-selected { background: rgba(44, 95, 141, 0.10) !important; }
+  .px-link:hover { text-decoration: underline; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid ${C.accent}; outline-offset: 1px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: ${C.hairline}; border-radius: 4px; }
+`;
+
+// ═══════════════════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════════════════
+function App() {
+  const [user, setUser]           = useState(loadUser());
+  const [nameInput, setNameInput] = useState('');
+  const [bdMonth, setBdMonth]     = useState('');
+  const [bdDay, setBdDay]         = useState('');
+  const [userItems, setUserItems] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [view, setView]           = useState('upnext');
+  const [cursor, setCursor]       = useState(today());
+  const [selectedDate, setSelectedDate] = useState(today());
+  const [filter, setFilter]       = useState('all');
+  const [adding, setAdding]       = useState(false);
+  const [editing, setEditing]     = useState(null);
+  const [toast, setToast]         = useState(null);
+  const [linkPaste, setLinkPaste] = useState('');
+
+  const items = useMemo(() => [...userItems, ...allHolidays()], [userItems]);
+
+  // Load on mount
+  useEffect(() => {
+    (async () => {
+      const items = await dbLoadAll();
+      setUserItems(items);
+      setLoading(false);
+    })();
+  }, []);
+
+  // Real-time subscription — anyone's change shows up live for everyone
+  useEffect(() => {
+    const channel = sb
+      .channel('items-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, async () => {
+        const items = await dbLoadAll();
+        setUserItems(items);
+      })
+      .subscribe();
+    return () => { sb.removeChannel(channel); };
+  }, []);
+
+  const refresh = useCallback(async () => {
+    const items = await dbLoadAll();
+    setUserItems(items);
+    flash('refreshed');
+  }, []);
+
+  const monthItems = useMemo(
+    () => occurrencesForMonth(items, cursor.getFullYear(), cursor.getMonth()),
+    [items, cursor]
+  );
+  const itemsOnSelectedDay = useMemo(() => {
+    if (!selectedDate) return [];
+    return monthItems
+      .filter(it => ymd(it.displayDate) === ymd(selectedDate))
+      .filter(it => filter === 'all' || it.type === filter);
+  }, [monthItems, selectedDate, filter]);
+
+  const todaysCelebs = useMemo(() => {
+    const t = today();
+    return items.filter(it => {
+      if (CATS[it.type]?.recurring) return it.month === t.getMonth() + 1 && it.day === t.getDate();
+      return false;
+    }).filter(it => it.type === 'birthday' || it.type === 'nameday' || it.type === 'holiday');
+  }, [items]);
+
+  function flash(message) { setToast(message); setTimeout(() => setToast(null), 2400); }
+
+  if (loading) {
+    return (
+      <>
+        <style>{FONTS}</style>
+        <div style={{ minHeight: '100vh', background: C.bg, display: 'grid', placeItems: 'center', fontFamily: 'DM Sans, sans-serif', color: C.muted }}>
+          opening πάμε…
+        </div>
+      </>
+    );
+  }
+
+  if (!user?.name) {
+    const handleEnter = async () => {
+      const name = nameInput.trim();
+      if (!name) return;
+      saveUser(name);
+      setUser({ name });
+
+      const newItems = [];
+      const nd = findNameDay(name);
+      if (nd) {
+        const exists = userItems.some(it =>
+          it.type === 'nameday' && it.month === nd.month && it.day === nd.day && (it.title || '').toLowerCase().includes(name.toLowerCase())
+        );
+        if (!exists) {
+          newItems.push({
+            id: newId(), type: 'nameday',
+            title: `${name}'s name day`, greek: nd.greek,
+            month: nd.month, day: nd.day,
+            location: '', link: '', notes: `Saint's day for ${nd.greek}`,
+            addedBy: name, createdAt: Date.now(), rsvps: {},
+          });
+        }
+      }
+      if (bdMonth && bdDay) {
+        const m = Number(bdMonth), d = Number(bdDay);
+        const exists = userItems.some(it =>
+          it.type === 'birthday' && it.month === m && it.day === d &&
+          (it.title || '').toLowerCase().includes(name.toLowerCase())
+        );
+        if (!exists) {
+          newItems.push({
+            id: newId(), type: 'birthday',
+            title: `${name}'s birthday`, month: m, day: d,
+            location: '', link: '', notes: '',
+            addedBy: name, createdAt: Date.now(), rsvps: {},
+          });
+        }
+      }
+      if (newItems.length > 0) {
+        for (const it of newItems) await dbInsert(it);
+        const labels = [];
+        if (newItems.some(it => it.type === 'nameday'))  labels.push('name day');
+        if (newItems.some(it => it.type === 'birthday')) labels.push('birthday');
+        flash(`Χρόνια πολλά in advance — added your ${labels.join(' & ')}`);
+      }
+    };
+    return (
+      <>
+        <style>{FONTS}</style>
+        <div style={{ minHeight: '100vh', background: C.bg, display: 'grid', placeItems: 'center', padding: '2rem' }}>
+          <div className="px-fade" style={{
+            background: C.paper, borderRadius: 14, padding: '2.5rem 2rem', maxWidth: 440, width: '100%',
+            border: `1px solid ${C.hairline}`, boxShadow: '0 1px 2px rgba(30, 58, 95, 0.06)',
+          }}>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: C.muted, marginBottom: '0.4rem', fontWeight: 600 }}>welcome</div>
+            <h1 style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: '3rem', color: C.ink, lineHeight: 1, margin: '0 0 0.4rem' }}>
+              πάμε <span style={{ fontStyle: 'normal', fontSize: '0.65em', verticalAlign: 'middle' }}>🥂</span>
+            </h1>
+            <p style={{ color: C.inkSoft, fontSize: '0.95rem', margin: '0 0 1.6rem', lineHeight: 1.5 }}>
+              the calendar for athens, the whole crew. birthdays, name days, dinners, plans we keep forwarding in the group chat.
+            </p>
+
+            <label style={{ display: 'block', fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, fontWeight: 600, marginBottom: '0.4rem' }}>your name</label>
+            <input autoFocus value={nameInput} onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleEnter(); }}
+              placeholder="e.g. Sabrina"
+              style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '1rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: C.ink, border: `1px solid ${C.hairline}`, borderRadius: 10, marginBottom: '1rem' }} />
+
+            <label style={{ display: 'block', fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, fontWeight: 600, marginBottom: '0.4rem' }}>
+              your birthday <span style={{ textTransform: 'none', letterSpacing: 0, color: C.muted, fontWeight: 400 }}>(optional)</span>
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem' }}>
+              <select value={bdMonth} onChange={e => setBdMonth(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '0.95rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: bdMonth ? C.ink : C.muted, border: `1px solid ${C.hairline}`, borderRadius: 10, appearance: 'none', cursor: 'pointer' }}>
+                <option value="">month…</option>
+                {MONTHS.map((m, i) => <option key={m} value={i+1}>{m}</option>)}
+              </select>
+              <input type="number" min="1" max="31" value={bdDay} onChange={e => setBdDay(e.target.value)} placeholder="day"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '0.95rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: C.ink, border: `1px solid ${C.hairline}`, borderRadius: 10 }} />
+            </div>
+
+            <p style={{ fontSize: '0.75rem', color: C.muted, margin: '0.7rem 0 1.4rem', fontStyle: 'italic' }}>
+              your birthday and (if it's Greek) your name day get added to the calendar automatically.
+            </p>
+            <button disabled={!nameInput.trim()} onClick={handleEnter}
+              style={{ width: '100%', padding: '0.9rem', background: nameInput.trim() ? C.ink : C.hairline, color: nameInput.trim() ? C.paper : C.muted, border: 'none', borderRadius: 10, cursor: nameInput.trim() ? 'pointer' : 'default', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              πάμε →
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const addItem = async (data) => {
+    const item = { id: newId(), ...data, addedBy: user.name, createdAt: Date.now(), rsvps: {} };
+    setUserItems([...userItems, item]); // optimistic
+    await dbInsert(item);
+    flash('added');
+  };
+  const updateItem = async (id, patch) => {
+    setUserItems(userItems.map(it => it.id === id ? { ...it, ...patch } : it));
+    await dbUpdate(id, patch);
+  };
+  const deleteItem = async (id) => {
+    if (!confirm('Delete this entry?')) return;
+    setUserItems(userItems.filter(it => it.id !== id));
+    await dbDelete(id);
+  };
+  const toggleRsvp = async (id, status) => {
+    const it = userItems.find(i => i.id === id);
+    if (!it) return;
+    const rsvps = { ...(it.rsvps || {}) };
+    if (rsvps[user.name] === status) delete rsvps[user.name];
+    else rsvps[user.name] = status;
+    setUserItems(userItems.map(x => x.id === id ? { ...x, rsvps } : x));
+    await dbUpdate(id, { rsvps });
+  };
+
+  const handlePasteSubmit = () => {
+    const url = linkPaste.trim();
+    if (!url) return;
+    setLinkPaste('');
+    setAdding({ link: url, type: 'event' });
+  };
+
+  return (
+    <>
+      <style>{FONTS}</style>
+      <div style={{ minHeight: '100vh', background: C.bg, color: C.ink, fontFamily: 'DM Sans, sans-serif', paddingBottom: '6rem' }}>
+        <Header user={user} onRefresh={refresh} />
+        {todaysCelebs.length > 0 && <CelebrationBanner celebs={todaysCelebs} userName={user.name} />}
+
+        <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 1.25rem' }}>
+          <ViewTabs view={view} setView={setView} />
+          {view === 'upnext' && (
+            <div style={{ marginTop: '1rem', background: C.paper, borderRadius: 12, border: `1px solid ${C.hairline}`, padding: '0.55rem 0.55rem 0.55rem 0.95rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <LinkIcon size={14} color={C.muted} />
+              <input value={linkPaste} onChange={e => setLinkPaste(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handlePasteSubmit(); }}
+                placeholder="paste a link from the group chat — instagram, eventbrite, anything"
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', color: C.ink }} />
+              <button onClick={handlePasteSubmit} disabled={!linkPaste.trim()}
+                style={{ padding: '0.5rem 0.9rem', background: linkPaste.trim() ? C.accent : C.hairline, color: linkPaste.trim() ? C.paper : C.muted, border: 'none', borderRadius: 8, cursor: linkPaste.trim() ? 'pointer' : 'default', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Plus size={12} /> add
+              </button>
+            </div>
+          )}
+          <FilterRow filter={filter} setFilter={setFilter} view={view} />
+
+          {view === 'upnext'    && <UpNextView    items={items} filter={filter} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} />}
+          {view === 'tsintsin'  && <TsinTsinView  items={items} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} />}
+          {view === 'definitely'&& <DefinitelyView items={userItems} filter={filter} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} onSchedule={(it) => setEditing(it)} />}
+          {view === 'calendar'  && <CalendarView cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} setSelectedDate={setSelectedDate} monthItems={monthItems} filter={filter} itemsOnSelectedDay={itemsOnSelectedDay} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} onAddOnDate={(d) => { setSelectedDate(d); setAdding({ date: ymd(d) }); }} />}
+        </div>
+
+        <button onClick={() => setAdding({})}
+          style={{ position: 'fixed', right: '1.5rem', bottom: '1.5rem', background: C.accent, color: C.paper, border: 'none', width: 60, height: 60, borderRadius: '50%', cursor: 'pointer', display: 'grid', placeItems: 'center', boxShadow: '0 8px 24px rgba(44, 95, 141, 0.32)', zIndex: 50 }}
+          aria-label="Add new entry">
+          <Plus size={26} strokeWidth={2.2} />
+        </button>
+
+        {(adding || editing) && (
+          <AddEditModal initial={editing || adding} isEdit={!!editing}
+            onClose={() => { setAdding(false); setEditing(null); }}
+            onSubmit={async (data) => {
+              if (editing) await updateItem(editing.id, data);
+              else        await addItem(data);
+              setAdding(false); setEditing(null);
+            }} />
+        )}
+
+        {toast && (
+          <div className="px-pop" style={{ position: 'fixed', bottom: '6.5rem', left: '50%', transform: 'translateX(-50%)', background: C.ink, color: C.paper, padding: '0.65rem 1.1rem', borderRadius: 999, fontSize: '0.82rem', fontFamily: 'DM Sans, sans-serif', zIndex: 60, boxShadow: '0 4px 14px rgba(30, 58, 95, 0.22)' }}>
+            {toast}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════════════════════════
+function Header({ user, onRefresh }) {
+  return (
+    <div style={{ borderBottom: `1px solid ${C.hairline}`, background: C.paper }}>
+      <div style={{ maxWidth: 980, margin: '0 auto', padding: '1.4rem 1.25rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+        <div>
+          <div style={{ fontSize: '0.62rem', letterSpacing: '0.28em', textTransform: 'uppercase', color: C.muted, marginBottom: '0.2rem', fontWeight: 600 }}>athens · the crew</div>
+          <h1 style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: 'clamp(2rem, 6vw, 2.6rem)', color: C.ink, margin: 0, lineHeight: 1 }}>
+            πάμε <span style={{ fontStyle: 'normal', fontSize: '0.65em', verticalAlign: 'middle' }}>🥂</span>
+          </h1>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', background: C.bg, padding: '0.4rem 0.7rem 0.4rem 0.4rem', borderRadius: 999, border: `1px solid ${C.hairline}`, fontSize: '0.8rem', color: C.inkSoft }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', background: C.accent, color: C.paper, display: 'grid', placeItems: 'center', fontSize: '0.72rem', fontWeight: 700 }}>
+              {user.name.trim()[0].toUpperCase()}
+            </div>
+            <span style={{ whiteSpace: 'nowrap' }}>{user.name}</span>
+          </div>
+          <button onClick={onRefresh} title="Refresh"
+            style={{ background: C.bg, border: `1px solid ${C.hairline}`, borderRadius: 999, width: 36, height: 36, display: 'grid', placeItems: 'center', cursor: 'pointer', color: C.inkSoft }}>
+            <RefreshCw size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CELEBRATION BANNER
+// ═══════════════════════════════════════════════════════════════════════
+function CelebrationBanner({ celebs, userName }) {
+  const names = celebs.map(c => {
+    if (c.type === 'holiday') return c.title;
+    if (c.greek) return c.greek;
+    return (c.title || '').replace(/['']s (birthday|name day|nameday)/i, '').trim();
+  });
+  const greeting =
+    celebs.some(c => c.type === 'holiday' && /πάσχα/i.test(c.title)) ? 'Καλό Πάσχα' :
+    celebs.some(c => c.type === 'holiday' && /πρωτοχρονιά/i.test(c.title)) ? 'Καλή Χρονιά' :
+    celebs.some(c => c.type === 'holiday' && /χριστούγεννα/i.test(c.title)) ? 'Καλά Χριστούγεννα' : 'Χρόνια Πολλά';
+  const isOwnDay = celebs.some(c =>
+    (c.type === 'birthday' || c.type === 'nameday') &&
+    (c.title || '').toLowerCase().includes(userName.toLowerCase())
+  );
+  return (
+    <div className="px-fade" style={{ background: `linear-gradient(135deg, ${C.celebTop} 0%, ${C.celebBottom} 100%)`, borderBottom: `1px solid ${C.hairline}` }}>
+      <div style={{ maxWidth: 980, margin: '0 auto', padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+        <div className="px-shimmer" style={{ fontSize: '1.8rem', lineHeight: 1, flexShrink: 0 }}>🥂</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: 'clamp(1.1rem, 3.5vw, 1.4rem)', color: C.celebInk, lineHeight: 1.2 }}>
+            {greeting}{isOwnDay ? `, ${userName}` : ''} — {names.join(' · ')}!
+          </div>
+          <div style={{ fontSize: '0.78rem', color: C.celebInk, opacity: 0.7, marginTop: '0.15rem' }}>
+            {celebs.map(c => c.type === 'birthday' ? 'birthday today' : c.type === 'nameday' ? 'name day today' : (c.subtitle || c.title)).join(' · ')}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// VIEW TABS
+// ═══════════════════════════════════════════════════════════════════════
+function ViewTabs({ view, setView }) {
+  const tabs = [
+    { id: 'upnext',     label: 'Up Next',                       icon: List     },
+    { id: 'tsintsin',   label: 'Tsin Tsin',                     icon: Sparkles },
+    { id: 'definitely', label: 'We Should Definitely Do This',  icon: Bookmark },
+    { id: 'calendar',   label: 'Calendar',                      icon: CalIcon  },
+  ];
+  return (
+    <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.3rem', flexWrap: 'wrap', background: C.paper, padding: '0.35rem', borderRadius: 12, border: `1px solid ${C.hairline}`, width: 'fit-content', maxWidth: '100%' }}>
+      {tabs.map(t => {
+        const Icon = t.icon;
+        const active = view === t.id;
+        return (
+          <button key={t.id} onClick={() => setView(t.id)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 0.9rem', borderRadius: 8, border: 'none', cursor: 'pointer', background: active ? C.ink : 'transparent', color: active ? C.paper : C.inkSoft, fontFamily: 'DM Sans, sans-serif', fontSize: '0.84rem', fontWeight: 500, transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+            <Icon size={14} /> {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function FilterRow({ filter, setFilter, view }) {
+  if (view === 'tsintsin' || view === 'definitely') return null;
+  return (
+    <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <Pill active={filter === 'all'} onClick={() => setFilter('all')} label="All" />
+      {CAT_KEYS.map(k => {
+        const cat = CATS[k];
+        const Icon = cat.icon;
+        const active = filter === k;
+        return (
+          <button key={k} onClick={() => setFilter(k)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.75rem', borderRadius: 999, border: `1px solid ${active ? cat.color : C.hairline}`, background: active ? cat.color : 'transparent', color: active ? C.paper : C.inkSoft, cursor: 'pointer', fontSize: '0.76rem', fontWeight: 500, fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s' }}>
+            <Icon size={12} /> {cat.plural}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Pill({ active, onClick, label }) {
+  return (
+    <button onClick={onClick}
+      style={{ padding: '0.4rem 0.85rem', borderRadius: 999, border: `1px solid ${active ? C.ink : C.hairline}`, background: active ? C.ink : 'transparent', color: active ? C.paper : C.inkSoft, cursor: 'pointer', fontSize: '0.76rem', fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>
+      {label}
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// UP NEXT
+// ═══════════════════════════════════════════════════════════════════════
+function UpNextView({ items, filter, user, onRsvp, onEdit, onDelete }) {
+  const todayD = today();
+  const upcoming = useMemo(() => items
+    .filter(it => CATS[it.type]?.recurring || it.date)
+    .filter(it => filter === 'all' || it.type === filter)
+    .map(it => ({ ...it, occ: nextOccurrence(it, todayD) }))
+    .filter(it => it.occ)
+    .sort((a, b) => a.occ - b.occ)
+    .slice(0, 60), [items, filter]);
+
+  const groups = useMemo(() => {
+    const m = new Map();
+    for (const it of upcoming) {
+      const k = ymd(it.occ);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return Array.from(m.entries());
+  }, [upcoming]);
+
+  return (
+    <div className="px-fade" style={{ marginTop: '1.25rem' }}>
+      <h2 style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: '1.7rem', color: C.ink, margin: '0 0 0.25rem' }}>up next</h2>
+      <p style={{ fontSize: '0.84rem', color: C.muted, margin: '0 0 1.2rem' }}>the things we've actually said yes to.</p>
+      {groups.length === 0 ? (
+        <Empty text="nothing coming up. paste a link from the chat to start." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {groups.map(([dateKey, dayItems]) => {
+            const d = parseYMD(dateKey);
+            const isTodayD = ymd(d) === ymd(todayD);
+            const daysAway = Math.round((d - todayD) / 86400000);
+            return (
+              <div key={dateKey}>
+                <DateHeader d={d} isToday={isTodayD} daysAway={daysAway} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  {dayItems.map(it => <ItemCard key={it.id + '-' + dateKey} item={it} user={user} onRsvp={onRsvp} onEdit={onEdit} onDelete={onDelete} />)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DateHeader({ d, isToday, daysAway }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.65rem', marginBottom: '0.55rem', borderBottom: `1px solid ${C.hairline}`, paddingBottom: '0.4rem' }}>
+      <div style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '1.5rem', color: C.ink, lineHeight: 1 }}>{d.getDate()}</div>
+      <div>
+        <div style={{ fontSize: '0.85rem', color: C.inkSoft, fontWeight: 500 }}>{DOW[(d.getDay()+6)%7]}, {MONTHS[d.getMonth()]}</div>
+        <div style={{ fontSize: '0.7rem', color: C.muted }}>{isToday ? 'today' : daysAway === 1 ? 'tomorrow' : daysAway < 0 ? 'past' : `in ${daysAway} days`}</div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TSIN TSIN
+// ═══════════════════════════════════════════════════════════════════════
+function TsinTsinView({ items, user, onRsvp, onEdit, onDelete }) {
+  const todayD = today();
+  const celebs = useMemo(() => items
+    .filter(it => it.type === 'birthday' || it.type === 'nameday' || it.type === 'holiday')
+    .map(it => ({ ...it, occ: nextOccurrence(it, todayD) }))
+    .filter(it => it.occ)
+    .sort((a, b) => a.occ - b.occ), [items]);
+
+  const months = useMemo(() => {
+    const m = new Map();
+    for (const it of celebs) {
+      const k = `${it.occ.getFullYear()}-${pad(it.occ.getMonth()+1)}`;
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return Array.from(m.entries());
+  }, [celebs]);
+
+  return (
+    <div className="px-fade" style={{ marginTop: '1.25rem' }}>
+      <h2 style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: '1.7rem', color: C.ink, margin: '0 0 0.25rem' }}>tsin tsin 🥂</h2>
+      <p style={{ fontSize: '0.84rem', color: C.muted, margin: '0 0 1.2rem' }}>birthdays, name days, holidays — every χρόνια πολλά worth marking.</p>
+      {months.length === 0 ? (
+        <Empty text="no celebrations yet. add a birthday or name day from the + button." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.6rem' }}>
+          {months.map(([key, list]) => {
+            const [y, m] = key.split('-').map(Number);
+            return (
+              <div key={key}>
+                <div style={{ fontFamily: 'Fraunces, serif', fontStyle: 'italic', fontWeight: 500, fontSize: '1.2rem', color: C.ink, marginBottom: '0.6rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                  {MONTHS[m-1]}
+                  <span style={{ fontSize: '0.7rem', color: C.muted, fontStyle: 'normal', letterSpacing: '0.1em' }}>{y}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {list.map(it => <ItemCard key={it.id + '-' + key} item={it} user={user} onRsvp={onRsvp} onEdit={onEdit} onDelete={onDelete} showDate />)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// WE SHOULD DEFINITELY DO THIS
+// ═══════════════════════════════════════════════════════════════════════
+function DefinitelyView({ items, filter, user, onRsvp, onEdit, onDelete, onSchedule }) {
+  const wishlist = useMemo(() => items
+    .filter(it => !CATS[it.type]?.recurring && !it.date)
+    .filter(it => filter === 'all' || it.type === filter)
+    .sort((a, b) => b.createdAt - a.createdAt), [items, filter]);
+
+  return (
+    <div className="px-fade" style={{ marginTop: '1.25rem' }}>
+      <h2 style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: '1.7rem', color: C.ink, margin: '0 0 0.25rem' }}>we should definitely do this</h2>
+      <p style={{ fontSize: '0.84rem', color: C.muted, margin: '0 0 1.2rem' }}>the running list of "yes, let's go" we keep saying. set a date and it lands on the calendar.</p>
+      {wishlist.length === 0 ? (
+        <Empty text='add a restaurant or outing without a date — it lives here until someone says when.' />
+      ) : (
+        <div style={{ display: 'grid', gap: '0.6rem', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+          {wishlist.map(it => <ItemCard key={it.id} item={it} user={user} onRsvp={onRsvp} onEdit={onEdit} onDelete={onDelete} compact onSchedule={onSchedule} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Empty({ text = 'nothing here yet.' }) {
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center', color: C.muted, background: C.paper, borderRadius: 12, border: `1px dashed ${C.hairline}`, fontFamily: 'Fraunces, serif', fontStyle: 'italic' }}>
+      {text}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════════════════════════
+function CalendarView({ cursor, setCursor, selectedDate, setSelectedDate, monthItems, filter, itemsOnSelectedDay, user, onRsvp, onEdit, onDelete, onAddOnDate }) {
+  const year  = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const todayD = today();
+  const filteredMonthItems = monthItems.filter(it => filter === 'all' || it.type === filter);
+
+  const weeks = useMemo(() => {
+    const start = startOfMonthGrid(year, month);
+    const out = [];
+    for (let w = 0; w < 6; w++) {
+      const week = [];
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(start);
+        day.setDate(start.getDate() + w * 7 + d);
+        week.push(day);
+      }
+      out.push(week);
+    }
+    return out;
+  }, [year, month]);
+
+  const itemsByDay = useMemo(() => {
+    const m = new Map();
+    for (const it of filteredMonthItems) {
+      const k = ymd(it.displayDate);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }, [filteredMonthItems]);
+
+  return (
+    <div className="px-fade" style={{ marginTop: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.75rem' }}>
+        <div>
+          <div style={{ fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted }}>{year}</div>
+          <h2 style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontStyle: 'italic', fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', color: C.ink, margin: 0, lineHeight: 1 }}>{MONTHS[month]}</h2>
+        </div>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <NavBtn onClick={() => setCursor(new Date(year, month - 1, 1))}><ChevronLeft size={16} /></NavBtn>
+          <button onClick={() => { setCursor(todayD); setSelectedDate(todayD); }}
+            style={{ background: 'transparent', border: `1px solid ${C.hairline}`, borderRadius: 999, padding: '0 0.85rem', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: C.inkSoft, height: 32 }}>today</button>
+          <NavBtn onClick={() => setCursor(new Date(year, month + 1, 1))}><ChevronRight size={16} /></NavBtn>
+        </div>
+      </div>
+
+      <div style={{ background: C.paper, borderRadius: 14, border: `1px solid ${C.hairline}`, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: C.bg, borderBottom: `1px solid ${C.hairline}` }}>
+          {DOW.map(d => <div key={d} style={{ padding: '0.55rem 0', textAlign: 'center', fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, fontWeight: 600 }}>{d}</div>)}
+        </div>
+        {weeks.map((week, wi) => (
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            {week.map(day => {
+              const inMonth = day.getMonth() === month;
+              const isToday = ymd(day) === ymd(todayD);
+              const isSelected = selectedDate && ymd(day) === ymd(selectedDate);
+              const dayItems = itemsByDay.get(ymd(day)) || [];
+              return (
+                <button key={ymd(day)} className={`px-day ${isSelected ? 'px-day-selected' : ''}`}
+                  onClick={() => setSelectedDate(day)} onDoubleClick={() => onAddOnDate(day)}
+                  style={{ minHeight: 78, padding: '0.4rem 0.45rem', background: 'transparent', border: 'none', borderRight: `1px solid ${C.hairline}`, borderBottom: `1px solid ${C.hairline}`, cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.3rem', opacity: inMonth ? 1 : 0.32, fontFamily: 'DM Sans, sans-serif', transition: 'background 0.12s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: isToday ? 700 : 500, color: isToday ? C.paper : (inMonth ? C.ink : C.muted), background: isToday ? C.accent : 'transparent', width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center' }}>{day.getDate()}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
+                    {dayItems.slice(0, 3).map((it, i) => <DayChip key={it.id + '-' + i} item={it} />)}
+                    {dayItems.length > 3 && <div style={{ fontSize: '0.65rem', color: C.muted, paddingLeft: 4 }}>+{dayItems.length - 3} more</div>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.85rem', fontSize: '0.7rem', color: C.muted }}>
+        {CAT_KEYS.map(k => {
+          const cat = CATS[k];
+          return <span key={k} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span style={{ width: 8, height: 8, borderRadius: 2, background: cat.color }} /> {cat.plural}</span>;
+        })}
+      </div>
+
+      <div style={{ marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.6rem' }}>
+          <h3 style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontStyle: 'italic', fontSize: '1.15rem', color: C.ink, margin: 0 }}>{fmtLong(selectedDate)}</h3>
+          <button onClick={() => onAddOnDate(selectedDate)}
+            style={{ background: 'transparent', border: `1px dashed ${C.hairline}`, borderRadius: 8, padding: '0.3rem 0.7rem', cursor: 'pointer', fontSize: '0.74rem', color: C.inkSoft, fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Plus size={12} /> add to this day
+          </button>
+        </div>
+        {itemsOnSelectedDay.length === 0 ? (
+          <Empty text="a quiet day in athens." />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+            {itemsOnSelectedDay.map(it => <ItemCard key={it.id} item={it} user={user} onRsvp={onRsvp} onEdit={onEdit} onDelete={onDelete} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NavBtn({ children, onClick }) {
+  return (
+    <button onClick={onClick} style={{ width: 32, height: 32, display: 'grid', placeItems: 'center', background: 'transparent', border: `1px solid ${C.hairline}`, borderRadius: 999, cursor: 'pointer', color: C.inkSoft }}>
+      {children}
+    </button>
+  );
+}
+
+function DayChip({ item }) {
+  const cat = CATS[item.type];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${cat.color}1a`, borderLeft: `2px solid ${cat.color}`, padding: '1px 4px', borderRadius: 3, fontSize: '0.66rem', color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ITEM CARD
+// ═══════════════════════════════════════════════════════════════════════
+function ItemCard({ item, user, onRsvp, onEdit, onDelete, compact, onSchedule, showDate }) {
+  const cat = CATS[item.type];
+  const Icon = cat.icon;
+  const myRsvp = item.rsvps?.[user.name];
+  const isSystem = !!cat.system;
+  const yes   = Object.entries(item.rsvps || {}).filter(([,v]) => v === 'yes').map(([n]) => n);
+  const maybe = Object.entries(item.rsvps || {}).filter(([,v]) => v === 'maybe').map(([n]) => n);
+  const totalVotes = yes.length + maybe.length;
+  const isOwner = item.addedBy === user.name;
+  const ig = isInstagram(item.link);
+  const dateLabel = (() => {
+    if (cat.recurring) {
+      if (item.month && item.day) return `${MONTHS[item.month-1]} ${item.day}`;
+      if (item.date) return fmtLong(parseYMD(item.date));
+      return null;
+    }
+    if (!item.date) return 'someday';
+    return fmtLong(parseYMD(item.date));
+  })();
+
+  return (
+    <div className="px-pop" style={{ background: C.paper, borderRadius: 12, border: `1px solid ${C.hairline}`, borderLeft: `3px solid ${cat.color}`, padding: '0.85rem 1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
+            <Icon size={13} color={cat.color} strokeWidth={2.2} />
+            <span style={{ fontSize: '0.62rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: cat.color, fontWeight: 700 }}>{cat.label}</span>
+            {showDate && dateLabel && <span style={{ fontSize: '0.7rem', color: C.muted }}>· {dateLabel}</span>}
+            {item.greek && <span style={{ fontSize: '0.72rem', color: C.muted, fontStyle: 'italic' }}>· {item.greek}</span>}
+          </div>
+          <div style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '1.05rem', color: C.ink, lineHeight: 1.25 }}>{item.title}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.4rem', fontSize: '0.78rem', color: C.inkSoft }}>
+            {item.time && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> {item.time}</span>}
+            {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11} /> {item.location}</span>}
+            {item.link && (
+              <a href={item.link} target="_blank" rel="noopener noreferrer" className="px-link"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, color: cat.color, textDecoration: 'none', fontWeight: 500 }}>
+                {ig ? <Instagram size={11} /> : <ExternalLink size={11} />}
+                {ig ? 'instagram' : 'link'}
+              </a>
+            )}
+          </div>
+          {item.notes && !isSystem && (
+            <div style={{ marginTop: '0.55rem', fontSize: '0.85rem', color: C.inkSoft, fontFamily: 'Fraunces, serif', fontStyle: 'italic', lineHeight: 1.4 }}>{item.notes}</div>
+          )}
+        </div>
+        {!isSystem && (
+          <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+            <IconBtn title="Edit" onClick={() => onEdit(item)}><Edit2 size={12} /></IconBtn>
+            {isOwner && <IconBtn title="Delete" onClick={() => onDelete(item.id)}><Trash2 size={12} /></IconBtn>}
+          </div>
+        )}
+      </div>
+
+      {cat.rsvp && (
+        <div style={{ marginTop: '0.7rem', paddingTop: '0.7rem', borderTop: `1px dashed ${C.hairline}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+            <Vote size={11} color={cat.color} strokeWidth={2.2} />
+            <span style={{ fontSize: '0.6rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: cat.color, fontWeight: 700 }}>poll · who's in?</span>
+            {totalVotes > 0 && <span style={{ fontSize: '0.7rem', color: C.muted, marginLeft: 'auto' }}>{totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}</span>}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              <RsvpBtn active={myRsvp === 'yes'}   color={cat.color} onClick={() => onRsvp(item.id, 'yes')}>I'm in</RsvpBtn>
+              <RsvpBtn active={myRsvp === 'maybe'} color={cat.color} variant="ghost" onClick={() => onRsvp(item.id, 'maybe')}>maybe</RsvpBtn>
+            </div>
+            <RsvpStack yes={yes} maybe={maybe} />
+          </div>
+        </div>
+      )}
+
+      {compact && !item.date && !cat.recurring && onSchedule && (
+        <button onClick={() => onSchedule(item)}
+          style={{ marginTop: '0.6rem', width: '100%', padding: '0.45rem', background: 'transparent', border: `1px dashed ${cat.color}`, borderRadius: 8, color: cat.color, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: '0.76rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+          <CalIcon size={12} /> set a date
+        </button>
+      )}
+
+      {!isSystem && (
+        <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', color: C.muted, fontStyle: 'italic' }}>added by {item.addedBy}</div>
+      )}
+    </div>
+  );
+}
+
+function RsvpBtn({ active, color, onClick, children, variant }) {
+  const ghost = variant === 'ghost';
+  return (
+    <button onClick={onClick}
+      style={{ padding: '0.4rem 0.8rem', borderRadius: 999, cursor: 'pointer', fontSize: '0.74rem', fontWeight: 600, fontFamily: 'DM Sans, sans-serif', border: `1px solid ${active ? color : C.hairline}`, background: active ? color : 'transparent', color: active ? C.paper : (ghost ? C.muted : C.inkSoft), transition: 'all 0.15s' }}>
+      {children}
+    </button>
+  );
+}
+
+function RsvpStack({ yes, maybe }) {
+  if (yes.length === 0 && maybe.length === 0) return <span style={{ fontSize: '0.7rem', color: C.muted, fontStyle: 'italic' }}>be the first to vote</span>;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', color: C.muted, flexWrap: 'wrap' }}>
+      {yes.length > 0 && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          <Users size={11} /><strong style={{ color: C.ink, fontWeight: 700 }}>{yes.length}</strong> in
+          <span style={{ color: C.muted }}>· {yes.join(', ')}</span>
+        </span>
+      )}
+      {maybe.length > 0 && <span style={{ color: C.muted }}>+{maybe.length} maybe</span>}
+    </div>
+  );
+}
+
+function IconBtn({ children, onClick, title }) {
+  return (
+    <button onClick={onClick} title={title}
+      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.muted, padding: 4, display: 'grid', placeItems: 'center', borderRadius: 6 }}>
+      {children}
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADD / EDIT MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function AddEditModal({ initial, isEdit, onClose, onSubmit }) {
+  const [type, setType]         = useState(initial.type || 'event');
+  const [title, setTitle]       = useState(initial.title || '');
+  const [date, setDate]         = useState(initial.date || '');
+  const [month, setMonth]       = useState(initial.month || '');
+  const [day, setDay]           = useState(initial.day || '');
+  const [time, setTime]         = useState(initial.time || '');
+  const [location, setLocation] = useState(initial.location || '');
+  const [link, setLink]         = useState(initial.link || '');
+  const [notes, setNotes]       = useState(initial.notes || '');
+
+  const cat = CATS[type];
+  const ig  = isInstagram(link);
+  const canSave = title.trim() && (cat.recurring ? (month && day) : true);
+
+  const submit = () => {
+    if (!canSave) return;
+    const data = { type, title: title.trim(), location: location.trim(), link: link.trim(), notes: notes.trim() };
+    if (cat.recurring) {
+      data.month = Number(month); data.day = Number(day);
+      data.date = null; data.time = null;
+    } else {
+      data.date = date || null; data.time = time || null;
+      data.month = null; data.day = null;
+    }
+    onSubmit(data);
+  };
+
+  const ndSuggestion = type === 'nameday' ? findNameDay(title) : null;
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(30, 58, 95, 0.45)', display: 'grid', placeItems: 'center', padding: '1rem', zIndex: 100 }}>
+      <div className="px-pop" onClick={e => e.stopPropagation()}
+        style={{ background: C.paper, borderRadius: 14, padding: '1.5rem', width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${C.hairline}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+          <div>
+            <div style={{ fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: C.muted, fontWeight: 600 }}>{isEdit ? 'edit entry' : 'new entry'}</div>
+            <h2 style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: '1.5rem', color: C.ink, margin: '0.2rem 0 0' }}>add to πάμε</h2>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.muted, padding: 4 }}><X size={20} /></button>
+        </div>
+
+        <Label>type</Label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: '0.4rem', marginBottom: '1rem' }}>
+          {USER_CATS.map(k => {
+            const c = CATS[k]; const Ic = c.icon; const active = type === k;
+            return (
+              <button key={k} onClick={() => setType(k)}
+                style={{ padding: '0.65rem 0.4rem', borderRadius: 10, cursor: 'pointer', border: `1px solid ${active ? c.color : C.hairline}`, background: active ? `${c.color}14` : C.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem', fontFamily: 'DM Sans, sans-serif', fontSize: '0.72rem', fontWeight: 600, color: active ? c.color : C.inkSoft, transition: 'all 0.15s' }}>
+                <Ic size={16} strokeWidth={2.2} /> {c.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <Label>{type === 'birthday' || type === 'nameday' ? 'whose' : 'title'}</Label>
+        <Input value={title} onChange={setTitle}
+          placeholder={
+            type === 'birthday'   ? "e.g. Maria's birthday" :
+            type === 'nameday'    ? "e.g. Eleni" :
+            type === 'restaurant' ? "e.g. Mavro Provato" :
+            type === 'outing'     ? "e.g. day trip to Hydra" : "e.g. rooftop cinema night"
+          } autoFocus />
+
+        {ndSuggestion && type === 'nameday' && (
+          <button onClick={() => { setMonth(ndSuggestion.month); setDay(ndSuggestion.day); }}
+            style={{ width: '100%', padding: '0.55rem 0.8rem', marginBottom: '0.8rem', background: `${C.nameday}14`, border: `1px dashed ${C.nameday}`, borderRadius: 8, cursor: 'pointer', textAlign: 'left', fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: C.ink, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Sparkles size={13} color={C.nameday} />
+            <span><strong>{ndSuggestion.greek}</strong> · {MONTHS[ndSuggestion.month-1]} {ndSuggestion.day} — <span style={{ color: C.inkSoft }}>tap to use</span></span>
+          </button>
+        )}
+
+        {cat.recurring ? (
+          <>
+            <Label>date <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(repeats yearly)</span></Label>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem', marginBottom: '0.8rem' }}>
+              <select value={month} onChange={e => setMonth(e.target.value)} style={selectStyle()}>
+                <option value="">month…</option>
+                {MONTHS.map((m, i) => <option key={m} value={i+1}>{m}</option>)}
+              </select>
+              <input type="number" min="1" max="31" value={day} onChange={e => setDay(e.target.value)} placeholder="day" style={inputStyle()} />
+            </div>
+          </>
+        ) : (
+          <>
+            <Label>date <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(blank = lands in "We Should Definitely Do This")</span></Label>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem', marginBottom: '0.8rem' }}>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle()} />
+              <input type="time" value={time} onChange={e => setTime(e.target.value)} style={inputStyle()} disabled={!date} />
+            </div>
+          </>
+        )}
+
+        {(type === 'event' || type === 'restaurant' || type === 'outing' || type === 'birthday') && (
+          <>
+            <Label>location</Label>
+            <Input value={location} onChange={setLocation} placeholder="e.g. Koukaki, Athens" />
+          </>
+        )}
+
+        {(type === 'event' || type === 'restaurant' || type === 'outing') && (
+          <>
+            <Label>link {ig && <span style={{ color: C.event, fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>· instagram detected</span>}</Label>
+            <Input value={link} onChange={setLink} placeholder="paste a url — instagram, eventbrite, anything" />
+          </>
+        )}
+
+        <Label>notes <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></Label>
+        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+          placeholder="anything to know — dress code, what to bring, why this place…"
+          style={{ ...inputStyle(), resize: 'vertical', fontFamily: 'DM Sans, sans-serif' }} />
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
+          <button onClick={onClose}
+            style={{ flex: 1, padding: '0.85rem', background: 'transparent', color: C.inkSoft, border: `1px solid ${C.hairline}`, borderRadius: 10, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>cancel</button>
+          <button onClick={submit} disabled={!canSave}
+            style={{ flex: 2, padding: '0.85rem', background: canSave ? C.accent : C.hairline, color: canSave ? C.paper : C.muted, border: 'none', borderRadius: 10, cursor: canSave ? 'pointer' : 'default', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+            <Check size={14} /> {isEdit ? 'save' : 'add'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Label({ children }) {
+  return (
+    <label style={{ display: 'block', fontSize: '0.68rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: C.muted, fontWeight: 700, marginBottom: '0.35rem', marginTop: '0.5rem' }}>
+      {children}
+    </label>
+  );
+}
+
+function Input({ value, onChange, placeholder, autoFocus }) {
+  return (
+    <input autoFocus={autoFocus} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      style={{ ...inputStyle(), marginBottom: '0.8rem' }} />
+  );
+}
+
+function inputStyle() {
+  return { width: '100%', boxSizing: 'border-box', padding: '0.7rem 0.85rem', fontSize: '0.94rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: C.ink, border: `1px solid ${C.hairline}`, borderRadius: 10 };
+}
+function selectStyle() {
+  return { ...inputStyle(), appearance: 'none', cursor: 'pointer' };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MOUNT
+// ═══════════════════════════════════════════════════════════════════════
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
