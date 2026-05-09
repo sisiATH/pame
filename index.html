@@ -808,7 +808,19 @@ function UpNextView({ items, filter, user, onRsvp, onEdit, onDelete }) {
   const upcoming = useMemo(() => items
     .filter(it => CATS[it.type]?.recurring || it.date)
     .filter(it => filter === 'all' || it.type === filter)
-    .map(it => ({ ...it, occ: nextOccurrence(it, todayD) }))
+    .map(it => {
+      // For festivals, anchor to the next active or upcoming range, not just the start date
+      if (it.type === 'festival') {
+        const ranges = allRanges(it)
+          .map(r => ({ start: parseYMD(r.start), end: parseYMD(r.end) }))
+          .sort((a, b) => a.start - b.start);
+        const active = ranges.find(r => todayD >= r.start && todayD <= r.end);
+        const next = ranges.find(r => r.start > todayD);
+        const anchor = active ? todayD : next?.start;
+        return { ...it, occ: anchor || null };
+      }
+      return { ...it, occ: nextOccurrence(it, todayD) };
+    })
     .filter(it => it.occ)
     .sort((a, b) => a.occ - b.occ)
     .slice(0, 60), [items, filter]);
