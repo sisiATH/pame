@@ -281,6 +281,7 @@ function fromDb(row) {
     title: row.title,
     date: row.date,
     endDate: row.end_date,
+    extraRanges: row.extra_ranges || [],
     time: row.time,
     month: row.month,
     day: row.day,
