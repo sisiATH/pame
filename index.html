@@ -958,30 +958,58 @@ function FestivalCard({ item, user, onRsvp, onEdit, onDelete }) {
   const isOwner = item.addedBy === user.name;
   const ig = isInstagram(item.link);
 
-  const start = item.date ? parseYMD(item.date) : null;
-  const end = item.endDate ? parseYMD(item.endDate) : start;
+  const ranges = allRanges(item)
+    .map(r => ({ start: parseYMD(r.start), end: parseYMD(r.end) }))
+    .sort((a, b) => a.start - b.start);
   const todayD = today();
-  const sameDay = start && end && ymd(start) === ymd(end);
+  const firstStart = ranges[0]?.start;
+  const lastEnd = ranges[ranges.length - 1]?.end;
+  const isMultiRange = ranges.length > 1;
 
-  // Date range label
-  const dateLabel = !start ? '' : sameDay
-    ? fmtLong(start)
-    : start.getMonth() === end.getMonth()
-      ? `${start.getDate()}–${end.getDate()} ${MONTHS[start.getMonth()]}`
-      : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
+  // Smart label: "8–10, 15–17, 22–24 May" or "12–15 June" or "Sat 4 May"
+  const dateLabel = (() => {
+    if (ranges.length === 0) return '';
+    if (!isMultiRange) {
+      const { start, end } = ranges[0];
+      if (ymd(start) === ymd(end)) return fmtLong(start);
+      if (start.getMonth() === end.getMonth())
+        return `${start.getDate()}–${end.getDate()} ${MONTHS[start.getMonth()]}`;
+      return `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
+    }
+    // Multiple ranges — group by month
+    const byMonth = new Map();
+    for (const { start, end } of ranges) {
+      const key = `${start.getFullYear()}-${start.getMonth()}`;
+      if (!byMonth.has(key)) byMonth.set(key, { month: start.getMonth(), parts: [] });
+      const part = ymd(start) === ymd(end) ? `${start.getDate()}` : `${start.getDate()}–${end.getDate()}`;
+      byMonth.get(key).parts.push(part);
+    }
+    return Array.from(byMonth.values())
+      .map(({ month, parts }) => `${parts.join(', ')} ${MONTHS[month].slice(0, 3)}`)
+      .join(' · ');
+  })();
 
-  // Status text
+  // Find which range we're in (or next)
+  const activeRange = ranges.find(r => todayD >= r.start && todayD <= r.end);
+  const nextRange = ranges.find(r => r.start > todayD);
+
   const statusLabel = (() => {
-    if (!start) return null;
-    if (todayD < start) {
-      const days = Math.round((start - todayD) / 86400000);
+    if (ranges.length === 0) return null;
+    if (activeRange) {
+      const sameDay = ymd(activeRange.start) === ymd(activeRange.end);
+      if (sameDay) return 'today';
+      const totalDays = Math.round((activeRange.end - activeRange.start) / 86400000) + 1;
+      const dayN = Math.round((todayD - activeRange.start) / 86400000) + 1;
+      return isMultiRange ? `weekend ${ranges.indexOf(activeRange) + 1} of ${ranges.length}` : `day ${dayN} of ${totalDays}`;
+    }
+    if (nextRange) {
+      const days = Math.round((nextRange.start - todayD) / 86400000);
+      if (isMultiRange && nextRange !== ranges[0]) {
+        return days === 1 ? 'next weekend tomorrow' : `next weekend in ${days} days`;
+      }
       return days === 1 ? 'starts tomorrow' : `starts in ${days} days`;
     }
-    if (todayD > end) return 'past';
-    // happening now
-    const totalDays = Math.round((end - start) / 86400000) + 1;
-    const dayN = Math.round((todayD - start) / 86400000) + 1;
-    return sameDay ? 'today' : `day ${dayN} of ${totalDays}`;
+    return 'past';
   })();
 
   return (
