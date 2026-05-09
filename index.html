@@ -334,7 +334,8 @@ async function dbUpdate(id, patch) {
   if ('title' in patch) dbPatch.title = patch.title;
   if ('type' in patch) dbPatch.type = patch.type;
   if ('date' in patch) dbPatch.date = patch.date || null;
-  if ('endDate' in patch) dbPatch.end_date = patch.endDate || null;
+ if ('endDate' in patch) dbPatch.end_date = patch.endDate || null;
+  if ('extraRanges' in patch) dbPatch.extra_ranges = patch.extraRanges || [];
   if ('time' in patch) dbPatch.time = patch.time || null;
   if ('month' in patch) dbPatch.month = patch.month || null;
   if ('day' in patch) dbPatch.day = patch.day || null;
