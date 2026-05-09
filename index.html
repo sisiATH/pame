@@ -71,6 +71,7 @@ const Instagram = (p) => <Sv {...p}><rect width="20" height="20" x="2" y="2" rx=
 const Users = (p) => <Sv {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Sv>;
 const PartyPopper = (p) => <Sv {...p}><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-1.46.46c-.79.25-1.32.99-1.32 1.81v.42c0 .79-.59 1.43-1.36 1.49a2 2 0 0 0-1.7 2.79l.43 1"/><path d="m11 13-1.16-3.4a3 3 0 0 0-1.97-1.97L4.5 6.5"/></Sv>;
 const Vote = (p) => <Sv {...p}><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></Sv>;
+const Music = (p) => <Sv {...p}><circle cx="8" cy="18" r="4"/><path d="M12 18V2l7 4"/></Sv>;
 
 // ═══════════════════════════════════════════════════════════════════════
 // PALETTE
@@ -89,6 +90,7 @@ const C = {
   event:      '#2c5f8d',
   restaurant: '#1f7a78',
   outing:     '#4a8d52',
+  festival:   '#b04d8a',
   holiday:    '#7d5a99',
   celebTop:    '#fff4e8',
   celebBottom: '#ffe6ec',
@@ -102,12 +104,21 @@ const CATS = {
   birthday:   { label: 'Birthday',   plural: 'Birthdays',   icon: Cake,            color: C.birthday,   recurring: true,  rsvp: false, system: false },
   nameday:    { label: 'Name Day',   plural: 'Name Days',   icon: Sparkles,        color: C.nameday,    recurring: true,  rsvp: false, system: false },
   event:      { label: 'Event',      plural: 'Events',      icon: Ticket,          color: C.event,      recurring: false, rsvp: true,  system: false },
+  festival:   { label: 'Festival',   plural: 'Festivals',   icon: Music,           color: C.festival,   recurring: false, rsvp: true,  system: false },
   restaurant: { label: 'Restaurant', plural: 'Restaurants', icon: UtensilsCrossed, color: C.restaurant, recurring: false, rsvp: true,  system: false },
   outing:     { label: 'Outing',     plural: 'Outings',     icon: Compass,         color: C.outing,     recurring: false, rsvp: true,  system: false },
   holiday:    { label: 'Holiday',    plural: 'Holidays',    icon: PartyPopper,     color: C.holiday,    recurring: true,  rsvp: false, system: true  },
 };
 const CAT_KEYS = Object.keys(CATS);
 const USER_CATS = CAT_KEYS.filter(k => !CATS[k].system);
+
+const MEAL_OPTIONS = ['coffee', 'breakfast', 'brunch', 'lunch', 'dinner', 'drinks', 'late night', 'dessert'];
+const CUISINE_OPTIONS = [
+  'Greek', 'taverna', 'mezze', 'modern Greek', 'seafood',
+  'Italian', 'pizza', 'French', 'Mexican', 'Middle Eastern',
+  'Asian', 'sushi', 'Indian', 'brunch food', 'bakery',
+  'vegetarian', 'wine bar', 'cocktail bar',
+];
 
 // ═══════════════════════════════════════════════════════════════════════
 // GREEK ORTHODOX EASTER (hardcoded)
@@ -209,8 +220,16 @@ function occurrencesForMonth(items, year, month) {
     if (CATS[it.type]?.recurring) {
       if (it.month === month + 1) out.push({ ...it, displayDate: new Date(year, month, it.day) });
     } else if (it.date) {
-      const d = parseYMD(it.date);
-      if (d.getFullYear() === year && d.getMonth() === month) out.push({ ...it, displayDate: d });
+      const start = parseYMD(it.date);
+      const end = it.endDate ? parseYMD(it.endDate) : start;
+      // Expand date range — show item on every day from start to end that falls in this month
+      const cursor = new Date(start);
+      while (cursor <= end) {
+        if (cursor.getFullYear() === year && cursor.getMonth() === month) {
+          out.push({ ...it, displayDate: new Date(cursor) });
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
     }
   }
   return out;
@@ -261,6 +280,7 @@ function fromDb(row) {
     type: row.type,
     title: row.title,
     date: row.date,
+    endDate: row.end_date,
     time: row.time,
     month: row.month,
     day: row.day,
@@ -268,6 +288,8 @@ function fromDb(row) {
     link: row.link || '',
     notes: row.notes || '',
     greek: row.greek,
+    meal: row.meal || '',
+    cuisine: row.cuisine || '',
     addedBy: row.added_by,
     createdAt: row.created_at,
     rsvps: row.rsvps || {},
@@ -279,6 +301,7 @@ function toDb(item) {
     type: item.type,
     title: item.title,
     date: item.date || null,
+    end_date: item.endDate || null,
     time: item.time || null,
     month: item.month || null,
     day: item.day || null,
@@ -286,6 +309,8 @@ function toDb(item) {
     link: item.link || '',
     notes: item.notes || '',
     greek: item.greek || null,
+    meal: item.meal || null,
+    cuisine: item.cuisine || null,
     added_by: item.addedBy,
     created_at: item.createdAt,
     rsvps: item.rsvps || {},
@@ -307,6 +332,7 @@ async function dbUpdate(id, patch) {
   if ('title' in patch) dbPatch.title = patch.title;
   if ('type' in patch) dbPatch.type = patch.type;
   if ('date' in patch) dbPatch.date = patch.date || null;
+  if ('endDate' in patch) dbPatch.end_date = patch.endDate || null;
   if ('time' in patch) dbPatch.time = patch.time || null;
   if ('month' in patch) dbPatch.month = patch.month || null;
   if ('day' in patch) dbPatch.day = patch.day || null;
@@ -314,6 +340,8 @@ async function dbUpdate(id, patch) {
   if ('link' in patch) dbPatch.link = patch.link || '';
   if ('notes' in patch) dbPatch.notes = patch.notes || '';
   if ('greek' in patch) dbPatch.greek = patch.greek || null;
+  if ('meal' in patch) dbPatch.meal = patch.meal || null;
+  if ('cuisine' in patch) dbPatch.cuisine = patch.cuisine || null;
   if ('rsvps' in patch) dbPatch.rsvps = patch.rsvps || {};
   const { error } = await sb.from('items').update(dbPatch).eq('id', id);
   if (error) console.error(error);
@@ -340,6 +368,11 @@ const FONTS = `
   @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
   @keyframes shimmer { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 ${C.festival}66; }
+    70%  { box-shadow: 0 0 0 8px ${C.festival}00; }
+    100% { box-shadow: 0 0 0 0 ${C.festival}00; }
+  }
   .px-fade { animation: fadeIn 0.25s ease-out both; }
   .px-pop  { animation: pop 0.18s ease-out both; }
   .px-shimmer { animation: shimmer 1.6s ease-in-out infinite; transform-origin: 50% 70%; }
@@ -432,6 +465,14 @@ function App() {
   }
 
   if (!user?.name) {
+    const trimmedName = nameInput.trim();
+    const existingBirthday = trimmedName
+      ? userItems.find(it =>
+          it.type === 'birthday' &&
+          (it.title || '').toLowerCase().includes(trimmedName.toLowerCase())
+        )
+      : null;
+
     const handleEnter = async () => {
       const name = nameInput.trim();
       if (!name) return;
@@ -454,20 +495,15 @@ function App() {
           });
         }
       }
-      if (bdMonth && bdDay) {
+      // Only add birthday if user filled it in AND none exists
+      if (bdMonth && bdDay && !existingBirthday) {
         const m = Number(bdMonth), d = Number(bdDay);
-        const exists = userItems.some(it =>
-          it.type === 'birthday' && it.month === m && it.day === d &&
-          (it.title || '').toLowerCase().includes(name.toLowerCase())
-        );
-        if (!exists) {
-          newItems.push({
-            id: newId(), type: 'birthday',
-            title: `${name}'s birthday`, month: m, day: d,
-            location: '', link: '', notes: '',
-            addedBy: name, createdAt: Date.now(), rsvps: {},
-          });
-        }
+        newItems.push({
+          id: newId(), type: 'birthday',
+          title: `${name}'s birthday`, month: m, day: d,
+          location: '', link: '', notes: '',
+          addedBy: name, createdAt: Date.now(), rsvps: {},
+        });
       }
       if (newItems.length > 0) {
         for (const it of newItems) await dbInsert(it);
@@ -499,22 +535,36 @@ function App() {
               placeholder="e.g. Sabrina"
               style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '1rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: C.ink, border: `1px solid ${C.hairline}`, borderRadius: 10, marginBottom: '1rem' }} />
 
-            <label style={{ display: 'block', fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, fontWeight: 600, marginBottom: '0.4rem' }}>
-              your birthday <span style={{ textTransform: 'none', letterSpacing: 0, color: C.muted, fontWeight: 400 }}>(optional)</span>
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem' }}>
-              <select value={bdMonth} onChange={e => setBdMonth(e.target.value)}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '0.95rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: bdMonth ? C.ink : C.muted, border: `1px solid ${C.hairline}`, borderRadius: 10, appearance: 'none', cursor: 'pointer' }}>
-                <option value="">month…</option>
-                {MONTHS.map((m, i) => <option key={m} value={i+1}>{m}</option>)}
-              </select>
-              <input type="number" min="1" max="31" value={bdDay} onChange={e => setBdDay(e.target.value)} placeholder="day"
-                style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '0.95rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: C.ink, border: `1px solid ${C.hairline}`, borderRadius: 10 }} />
-            </div>
+            {existingBirthday ? (
+              <div style={{
+                padding: '0.7rem 0.85rem', marginBottom: '1.2rem',
+                background: `${C.birthday}10`, border: `1px dashed ${C.birthday}`,
+                borderRadius: 10, fontSize: '0.85rem', color: C.ink,
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+              }}>
+                <span style={{ fontSize: '1.1rem' }}>🎂</span>
+                <span>welcome back — your birthday's already on the calendar ({MONTHS[existingBirthday.month-1]} {existingBirthday.day}).</span>
+              </div>
+            ) : (
+              <>
+                <label style={{ display: 'block', fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, fontWeight: 600, marginBottom: '0.4rem' }}>
+                  your birthday <span style={{ textTransform: 'none', letterSpacing: 0, color: C.muted, fontWeight: 400 }}>(optional)</span>
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem' }}>
+                  <select value={bdMonth} onChange={e => setBdMonth(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '0.95rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: bdMonth ? C.ink : C.muted, border: `1px solid ${C.hairline}`, borderRadius: 10, appearance: 'none', cursor: 'pointer' }}>
+                    <option value="">month…</option>
+                    {MONTHS.map((m, i) => <option key={m} value={i+1}>{m}</option>)}
+                  </select>
+                  <input type="number" min="1" max="31" value={bdDay} onChange={e => setBdDay(e.target.value)} placeholder="day"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.8rem 0.9rem', fontSize: '0.95rem', fontFamily: 'DM Sans, sans-serif', background: C.bg, color: C.ink, border: `1px solid ${C.hairline}`, borderRadius: 10 }} />
+                </div>
+                <p style={{ fontSize: '0.75rem', color: C.muted, margin: '0.7rem 0 1.4rem', fontStyle: 'italic' }}>
+                  your birthday and (if it's Greek) your name day get added to the calendar automatically.
+                </p>
+              </>
+            )}
 
-            <p style={{ fontSize: '0.75rem', color: C.muted, margin: '0.7rem 0 1.4rem', fontStyle: 'italic' }}>
-              your birthday and (if it's Greek) your name day get added to the calendar automatically.
-            </p>
             <button disabled={!nameInput.trim()} onClick={handleEnter}
               style={{ width: '100%', padding: '0.9rem', background: nameInput.trim() ? C.ink : C.hairline, color: nameInput.trim() ? C.paper : C.muted, border: 'none', borderRadius: 10, cursor: nameInput.trim() ? 'pointer' : 'default', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               πάμε →
@@ -582,6 +632,7 @@ function App() {
           <FilterRow filter={filter} setFilter={setFilter} view={view} />
 
           {view === 'upnext'    && <UpNextView    items={items} filter={filter} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} />}
+          {view === 'festivals' && <FestivalsView items={items} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} />}
           {view === 'tsintsin'  && <TsinTsinView  items={items} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} />}
           {view === 'definitely'&& <DefinitelyView items={userItems} filter={filter} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} onSchedule={(it) => setEditing(it)} />}
           {view === 'calendar'  && <CalendarView cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} setSelectedDate={setSelectedDate} monthItems={monthItems} filter={filter} itemsOnSelectedDay={itemsOnSelectedDay} user={user} onRsvp={toggleRsvp} onEdit={setEditing} onDelete={deleteItem} onAddOnDate={(d) => { setSelectedDate(d); setAdding({ date: ymd(d) }); }} />}
@@ -683,6 +734,7 @@ function CelebrationBanner({ celebs, userName }) {
 function ViewTabs({ view, setView }) {
   const tabs = [
     { id: 'upnext',     label: 'Up Next',                       icon: List     },
+    { id: 'festivals',  label: 'Festivals',                     icon: Music    },
     { id: 'tsintsin',   label: 'Tsin Tsin',                     icon: Sparkles },
     { id: 'definitely', label: 'We Should Definitely Do This',  icon: Bookmark },
     { id: 'calendar',   label: 'Calendar',                      icon: CalIcon  },
@@ -704,7 +756,7 @@ function ViewTabs({ view, setView }) {
 }
 
 function FilterRow({ filter, setFilter, view }) {
-  if (view === 'tsintsin' || view === 'definitely') return null;
+  if (view === 'tsintsin' || view === 'definitely' || view === 'festivals') return null;
   return (
     <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
       <Pill active={filter === 'all'} onClick={() => setFilter('all')} label="All" />
@@ -790,6 +842,192 @@ function DateHeader({ d, isToday, daysAway }) {
         <div style={{ fontSize: '0.85rem', color: C.inkSoft, fontWeight: 500 }}>{DOW[(d.getDay()+6)%7]}, {MONTHS[d.getMonth()]}</div>
         <div style={{ fontSize: '0.7rem', color: C.muted }}>{isToday ? 'today' : daysAway === 1 ? 'tomorrow' : daysAway < 0 ? 'past' : `in ${daysAway} days`}</div>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FESTIVALS
+// ═══════════════════════════════════════════════════════════════════════
+function FestivalsView({ items, user, onRsvp, onEdit, onDelete }) {
+  const todayD = today();
+  const festivals = useMemo(() => items.filter(it => it.type === 'festival'), [items]);
+
+  const { happeningNow, upcoming, past } = useMemo(() => {
+    const now = [], up = [], pa = [];
+    for (const f of festivals) {
+      if (!f.date) continue;
+      const start = parseYMD(f.date);
+      const end = f.endDate ? parseYMD(f.endDate) : start;
+      if (todayD >= start && todayD <= end) now.push(f);
+      else if (start > todayD) up.push(f);
+      else pa.push(f);
+    }
+    now.sort((a, b) => parseYMD(a.date) - parseYMD(b.date));
+    up.sort((a, b) => parseYMD(a.date) - parseYMD(b.date));
+    pa.sort((a, b) => parseYMD(b.date) - parseYMD(a.date));
+    return { happeningNow: now, upcoming: up, past: pa };
+  }, [festivals]);
+
+  const renderFestival = (f) => <FestivalCard key={f.id} item={f} user={user} onRsvp={onRsvp} onEdit={onEdit} onDelete={onDelete} />;
+
+  return (
+    <div className="px-fade" style={{ marginTop: '1.25rem' }}>
+      <h2 style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontStyle: 'italic', fontSize: '1.7rem', color: C.ink, margin: '0 0 0.25rem' }}>festivals</h2>
+      <p style={{ fontSize: '0.84rem', color: C.muted, margin: '0 0 1.2rem' }}>the season's big ones — concerts, food fairs, neighborhood feasts.</p>
+
+      {festivals.length === 0 && (
+        <Empty text='no festivals yet. add one with the + button — pick "Festival" and set a start and end date.' />
+      )}
+
+      {happeningNow.length > 0 && (
+        <FestivalSection
+          label="happening now"
+          accent={C.festival}
+          pulse
+        >
+          {happeningNow.map(renderFestival)}
+        </FestivalSection>
+      )}
+
+      {upcoming.length > 0 && (
+        <FestivalSection label="coming up" accent={C.accent}>
+          {upcoming.map(renderFestival)}
+        </FestivalSection>
+      )}
+
+      {past.length > 0 && (
+        <FestivalSection label="past" accent={C.muted} dim>
+          {past.map(renderFestival)}
+        </FestivalSection>
+      )}
+    </div>
+  );
+}
+
+function FestivalSection({ label, accent, pulse, dim, children }) {
+  return (
+    <div style={{ marginBottom: '1.6rem', opacity: dim ? 0.65 : 1 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '0.5rem',
+        marginBottom: '0.7rem', paddingBottom: '0.4rem',
+        borderBottom: `1px solid ${C.hairline}`,
+      }}>
+        {pulse && (
+          <span style={{
+            width: 8, height: 8, borderRadius: '50%', background: accent,
+            boxShadow: `0 0 0 0 ${accent}`,
+            animation: 'pulse 1.6s ease-out infinite',
+          }} />
+        )}
+        <span style={{
+          fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase',
+          color: accent, fontWeight: 700,
+        }}>
+          {label}
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>{children}</div>
+    </div>
+  );
+}
+
+function FestivalCard({ item, user, onRsvp, onEdit, onDelete }) {
+  const cat = CATS.festival;
+  const Icon = cat.icon;
+  const myRsvp = item.rsvps?.[user.name];
+  const yes   = Object.entries(item.rsvps || {}).filter(([,v]) => v === 'yes').map(([n]) => n);
+  const maybe = Object.entries(item.rsvps || {}).filter(([,v]) => v === 'maybe').map(([n]) => n);
+  const totalVotes = yes.length + maybe.length;
+  const isOwner = item.addedBy === user.name;
+  const ig = isInstagram(item.link);
+
+  const start = item.date ? parseYMD(item.date) : null;
+  const end = item.endDate ? parseYMD(item.endDate) : start;
+  const todayD = today();
+  const sameDay = start && end && ymd(start) === ymd(end);
+
+  // Date range label
+  const dateLabel = !start ? '' : sameDay
+    ? fmtLong(start)
+    : start.getMonth() === end.getMonth()
+      ? `${start.getDate()}–${end.getDate()} ${MONTHS[start.getMonth()]}`
+      : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
+
+  // Status text
+  const statusLabel = (() => {
+    if (!start) return null;
+    if (todayD < start) {
+      const days = Math.round((start - todayD) / 86400000);
+      return days === 1 ? 'starts tomorrow' : `starts in ${days} days`;
+    }
+    if (todayD > end) return 'past';
+    // happening now
+    const totalDays = Math.round((end - start) / 86400000) + 1;
+    const dayN = Math.round((todayD - start) / 86400000) + 1;
+    return sameDay ? 'today' : `day ${dayN} of ${totalDays}`;
+  })();
+
+  return (
+    <div className="px-pop" style={{
+      background: C.paper, borderRadius: 12,
+      border: `1px solid ${C.hairline}`,
+      borderLeft: `3px solid ${cat.color}`,
+      padding: '0.95rem 1rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
+            <Icon size={13} color={cat.color} strokeWidth={2.2} />
+            <span style={{ fontSize: '0.62rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: cat.color, fontWeight: 700 }}>{cat.label}</span>
+            {statusLabel && <span style={{ fontSize: '0.7rem', color: C.muted }}>· {statusLabel}</span>}
+          </div>
+          <div style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '1.15rem', color: C.ink, lineHeight: 1.25 }}>{item.title}</div>
+          <div style={{
+            marginTop: '0.3rem',
+            fontFamily: 'Fraunces, serif', fontStyle: 'italic',
+            fontSize: '0.92rem', color: cat.color, fontWeight: 500,
+          }}>
+            {dateLabel}
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.45rem', fontSize: '0.78rem', color: C.inkSoft }}>
+            {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11} /> {item.location}</span>}
+            {item.link && (
+              <a href={item.link} target="_blank" rel="noopener noreferrer" className="px-link"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, color: cat.color, textDecoration: 'none', fontWeight: 500 }}>
+                {ig ? <Instagram size={11} /> : <ExternalLink size={11} />}
+                {ig ? 'instagram' : 'link'}
+              </a>
+            )}
+          </div>
+
+          {item.notes && (
+            <div style={{ marginTop: '0.55rem', fontSize: '0.85rem', color: C.inkSoft, fontFamily: 'Fraunces, serif', fontStyle: 'italic', lineHeight: 1.4 }}>{item.notes}</div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+          <IconBtn title="Edit" onClick={() => onEdit(item)}><Edit2 size={12} /></IconBtn>
+          {isOwner && <IconBtn title="Delete" onClick={() => onDelete(item.id)}><Trash2 size={12} /></IconBtn>}
+        </div>
+      </div>
+
+      <div style={{ marginTop: '0.7rem', paddingTop: '0.7rem', borderTop: `1px dashed ${C.hairline}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+          <Vote size={11} color={cat.color} strokeWidth={2.2} />
+          <span style={{ fontSize: '0.6rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: cat.color, fontWeight: 700 }}>poll · who's going?</span>
+          {totalVotes > 0 && <span style={{ fontSize: '0.7rem', color: C.muted, marginLeft: 'auto' }}>{totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}</span>}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: '0.35rem' }}>
+            <RsvpBtn active={myRsvp === 'yes'}   color={cat.color} onClick={() => onRsvp(item.id, 'yes')}>I'm going</RsvpBtn>
+            <RsvpBtn active={myRsvp === 'maybe'} color={cat.color} variant="ghost" onClick={() => onRsvp(item.id, 'maybe')}>maybe</RsvpBtn>
+          </div>
+          <RsvpStack yes={yes} maybe={maybe} />
+        </div>
+      </div>
+
+      <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', color: C.muted, fontStyle: 'italic' }}>added by {item.addedBy}</div>
     </div>
   );
 }
@@ -1031,6 +1269,26 @@ function ItemCard({ item, user, onRsvp, onEdit, onDelete, compact, onSchedule, s
             {item.greek && <span style={{ fontSize: '0.72rem', color: C.muted, fontStyle: 'italic' }}>· {item.greek}</span>}
           </div>
           <div style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '1.05rem', color: C.ink, lineHeight: 1.25 }}>{item.title}</div>
+
+          {(item.meal || item.cuisine) && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.4rem' }}>
+              {item.meal && (
+                <span style={{
+                  fontSize: '0.68rem', fontWeight: 600, color: C.restaurant,
+                  background: `${C.restaurant}14`, padding: '0.15rem 0.5rem',
+                  borderRadius: 999, letterSpacing: '0.04em',
+                }}>{item.meal}</span>
+              )}
+              {item.cuisine && (
+                <span style={{
+                  fontSize: '0.68rem', fontWeight: 500, color: C.inkSoft,
+                  background: C.bg, padding: '0.15rem 0.5rem', borderRadius: 999,
+                  border: `1px solid ${C.hairline}`,
+                }}>{item.cuisine}</span>
+              )}
+            </div>
+          )}
+
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.4rem', fontSize: '0.78rem', color: C.inkSoft }}>
             {item.time && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> {item.time}</span>}
             {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11} /> {item.location}</span>}
@@ -1126,12 +1384,15 @@ function AddEditModal({ initial, isEdit, onClose, onSubmit }) {
   const [type, setType]         = useState(initial.type || 'event');
   const [title, setTitle]       = useState(initial.title || '');
   const [date, setDate]         = useState(initial.date || '');
+  const [endDate, setEndDate]   = useState(initial.endDate || '');
   const [month, setMonth]       = useState(initial.month || '');
   const [day, setDay]           = useState(initial.day || '');
   const [time, setTime]         = useState(initial.time || '');
   const [location, setLocation] = useState(initial.location || '');
   const [link, setLink]         = useState(initial.link || '');
   const [notes, setNotes]       = useState(initial.notes || '');
+  const [meal, setMeal]         = useState(initial.meal || '');
+  const [cuisine, setCuisine]   = useState(initial.cuisine || '');
 
   const cat = CATS[type];
   const ig  = isInstagram(link);
@@ -1139,12 +1400,13 @@ function AddEditModal({ initial, isEdit, onClose, onSubmit }) {
 
   const submit = () => {
     if (!canSave) return;
-    const data = { type, title: title.trim(), location: location.trim(), link: link.trim(), notes: notes.trim() };
+    const data = { type, title: title.trim(), location: location.trim(), link: link.trim(), notes: notes.trim(), meal: meal.trim(), cuisine: cuisine.trim() };
     if (cat.recurring) {
       data.month = Number(month); data.day = Number(day);
-      data.date = null; data.time = null;
+      data.date = null; data.time = null; data.endDate = null;
     } else {
       data.date = date || null; data.time = time || null;
+      data.endDate = type === 'festival' ? (endDate || null) : null;
       data.month = null; data.day = null;
     }
     onSubmit(data);
@@ -1205,6 +1467,13 @@ function AddEditModal({ initial, isEdit, onClose, onSubmit }) {
               <input type="number" min="1" max="31" value={day} onChange={e => setDay(e.target.value)} placeholder="day" style={inputStyle()} />
             </div>
           </>
+        ) : type === 'festival' ? (
+          <>
+            <Label>start date</Label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inputStyle(), marginBottom: '0.6rem' }} />
+            <Label>end date <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(same as start if it's one day)</span></Label>
+            <input type="date" value={endDate} min={date || undefined} onChange={e => setEndDate(e.target.value)} style={{ ...inputStyle(), marginBottom: '0.8rem' }} disabled={!date} />
+          </>
         ) : (
           <>
             <Label>date <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(blank = lands in "We Should Definitely Do This")</span></Label>
@@ -1215,14 +1484,45 @@ function AddEditModal({ initial, isEdit, onClose, onSubmit }) {
           </>
         )}
 
-        {(type === 'event' || type === 'restaurant' || type === 'outing' || type === 'birthday') && (
+        {(type === 'event' || type === 'restaurant' || type === 'outing' || type === 'festival' || type === 'birthday') && (
           <>
             <Label>location</Label>
             <Input value={location} onChange={setLocation} placeholder="e.g. Koukaki, Athens" />
           </>
         )}
 
-        {(type === 'event' || type === 'restaurant' || type === 'outing') && (
+        {type === 'restaurant' && (
+          <>
+            <Label>meal <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></Label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.8rem' }}>
+              {MEAL_OPTIONS.map(m => {
+                const active = meal === m;
+                return (
+                  <button key={m} type="button" onClick={() => setMeal(active ? '' : m)}
+                    style={{
+                      padding: '0.35rem 0.7rem', borderRadius: 999, cursor: 'pointer',
+                      border: `1px solid ${active ? C.restaurant : C.hairline}`,
+                      background: active ? C.restaurant : 'transparent',
+                      color: active ? C.paper : C.inkSoft,
+                      fontFamily: 'DM Sans, sans-serif', fontSize: '0.74rem', fontWeight: 500,
+                    }}>
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Label>cuisine <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(pick one or type your own)</span></Label>
+            <input list="cuisine-options" value={cuisine} onChange={e => setCuisine(e.target.value)}
+              placeholder="e.g. Greek, taverna, Italian, Mexican…"
+              style={{ ...inputStyle(), marginBottom: '0.8rem' }} />
+            <datalist id="cuisine-options">
+              {CUISINE_OPTIONS.map(c => <option key={c} value={c} />)}
+            </datalist>
+          </>
+        )}
+
+        {(type === 'event' || type === 'restaurant' || type === 'outing' || type === 'festival') && (
           <>
             <Label>link {ig && <span style={{ color: C.event, fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>· instagram detected</span>}</Label>
             <Input value={link} onChange={setLink} placeholder="paste a url — instagram, eventbrite, anything" />
