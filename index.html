@@ -1428,8 +1428,8 @@ function AddEditModal({ initial, isEdit, onClose, onSubmit }) {
   const [type, setType]         = useState(initial.type || 'event');
   const [title, setTitle]       = useState(initial.title || '');
   const [date, setDate]         = useState(initial.date || '');
-  const [endDate, setEndDate]   = useState(initial.endDate || '');
-  const [month, setMonth]       = useState(initial.month || '');
+const [endDate, setEndDate]   = useState(initial.endDate || '');
+  const [extraRanges, setExtraRanges] = useState(initial.extraRanges || []);  const [month, setMonth]       = useState(initial.month || '');
   const [day, setDay]           = useState(initial.day || '');
   const [time, setTime]         = useState(initial.time || '');
   const [location, setLocation] = useState(initial.location || '');
