@@ -1451,6 +1451,9 @@ const [endDate, setEndDate]   = useState(initial.endDate || '');
     } else {
       data.date = date || null; data.time = time || null;
       data.endDate = type === 'festival' ? (endDate || null) : null;
+      data.extraRanges = type === 'festival'
+        ? extraRanges.filter(r => r?.start)
+        : [];
       data.month = null; data.day = null;
     }
     onSubmit(data);
