@@ -214,21 +214,34 @@ function nextOccurrence(it, from = today()) {
   const d = parseYMD(it.date);
   return d >= from ? d : null;
 }
+// All date ranges for an item — main range plus any extras
+function allRanges(it) {
+  const ranges = [];
+  if (it.date) ranges.push({ start: it.date, end: it.endDate || it.date });
+  if (Array.isArray(it.extraRanges)) {
+    for (const r of it.extraRanges) {
+      if (r?.start) ranges.push({ start: r.start, end: r.end || r.start });
+    }
+  }
+  return ranges;
+}
+
 function occurrencesForMonth(items, year, month) {
   const out = [];
   for (const it of items) {
     if (CATS[it.type]?.recurring) {
       if (it.month === month + 1) out.push({ ...it, displayDate: new Date(year, month, it.day) });
     } else if (it.date) {
-      const start = parseYMD(it.date);
-      const end = it.endDate ? parseYMD(it.endDate) : start;
-      // Expand date range — show item on every day from start to end that falls in this month
-      const cursor = new Date(start);
-      while (cursor <= end) {
-        if (cursor.getFullYear() === year && cursor.getMonth() === month) {
-          out.push({ ...it, displayDate: new Date(cursor) });
+      for (const r of allRanges(it)) {
+        const start = parseYMD(r.start);
+        const end = parseYMD(r.end);
+        const cursor = new Date(start);
+        while (cursor <= end) {
+          if (cursor.getFullYear() === year && cursor.getMonth() === month) {
+            out.push({ ...it, displayDate: new Date(cursor) });
+          }
+          cursor.setDate(cursor.getDate() + 1);
         }
-        cursor.setDate(cursor.getDate() + 1);
       }
     }
   }
