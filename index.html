@@ -1516,10 +1516,44 @@ const [endDate, setEndDate]   = useState(initial.endDate || '');
           </>
         ) : type === 'festival' ? (
           <>
-            <Label>start date</Label>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inputStyle(), marginBottom: '0.6rem' }} />
-            <Label>end date <span style={{ color: C.muted, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(same as start if it's one day)</span></Label>
-            <input type="date" value={endDate} min={date || undefined} onChange={e => setEndDate(e.target.value)} style={{ ...inputStyle(), marginBottom: '0.8rem' }} disabled={!date} />
+            <Label>dates</Label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.6rem' }}>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} placeholder="start" style={inputStyle()} />
+              <input type="date" value={endDate} min={date || undefined} onChange={e => setEndDate(e.target.value)} style={inputStyle()} disabled={!date} />
+            </div>
+
+            {extraRanges.map((r, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                <input type="date" value={r.start || ''}
+                  onChange={e => { const next = [...extraRanges]; next[i] = { ...next[i], start: e.target.value }; setExtraRanges(next); }}
+                  style={inputStyle()} />
+                <input type="date" value={r.end || ''} min={r.start || undefined}
+                  onChange={e => { const next = [...extraRanges]; next[i] = { ...next[i], end: e.target.value }; setExtraRanges(next); }}
+                  style={inputStyle()} disabled={!r.start} />
+                <button type="button" onClick={() => setExtraRanges(extraRanges.filter((_, j) => j !== i))}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.muted, padding: 4, display: 'grid', placeItems: 'center' }}
+                  title="Remove this range">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+
+            <button type="button"
+              onClick={() => setExtraRanges([...extraRanges, { start: '', end: '' }])}
+              disabled={!date || !endDate}
+              style={{
+                width: '100%', padding: '0.55rem', marginBottom: '0.8rem',
+                background: 'transparent', border: `1px dashed ${C.festival}`, borderRadius: 8,
+                color: (!date || !endDate) ? C.muted : C.festival,
+                cursor: (!date || !endDate) ? 'default' : 'pointer',
+                fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem',
+              }}>
+              <Plus size={12} /> add another weekend / range
+            </button>
+            <p style={{ fontSize: '0.72rem', color: C.muted, fontStyle: 'italic', margin: '0 0 0.8rem' }}>
+              for festivals that happen across multiple weekends — first range above, then add the others.
+            </p>
           </>
         ) : (
           <>
