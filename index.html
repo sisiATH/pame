@@ -204,6 +204,12 @@ function startOfMonthGrid(year, month) {
   return new Date(year, month, 1 - offset);
 }
 function nextOccurrence(it, from = today()) {
+  // Holidays have real calendar dates — treat them as dated, not recurring
+  if (it.type === 'holiday') {
+    if (!it.date) return null;
+    const d = parseYMD(it.date);
+    return d >= from ? d : null;
+  }
   if (CATS[it.type]?.recurring) {
     const y = from.getFullYear();
     const thisYear = new Date(y, (it.month || 1) - 1, it.day || 1);
