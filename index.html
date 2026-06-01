@@ -809,15 +809,21 @@ function UpNextView({ items, filter, user, onRsvp, onEdit, onDelete }) {
     .filter(it => CATS[it.type]?.recurring || it.date)
     .filter(it => filter === 'all' || it.type === filter)
     .map(it => {
-      // For festivals, anchor to the next active or upcoming range, not just the start date
-      if (it.type === 'festival') {
-        const ranges = allRanges(it)
+      // Festival? Anchor to active range or next range, falling back to start date
+      if (it.type === 'festival' && it.date) {
+        const ranges = [{ start: it.date, end: it.endDate || it.date }];
+        if (Array.isArray(it.extraRanges)) {
+          for (const r of it.extraRanges) {
+            if (r?.start) ranges.push({ start: r.start, end: r.end || r.start });
+          }
+        }
+        const parsed = ranges
           .map(r => ({ start: parseYMD(r.start), end: parseYMD(r.end) }))
           .sort((a, b) => a.start - b.start);
-        const active = ranges.find(r => todayD >= r.start && todayD <= r.end);
-        const next = ranges.find(r => r.start > todayD);
-        const anchor = active ? todayD : next?.start;
-        return { ...it, occ: anchor || null };
+        const active = parsed.find(r => todayD >= r.start && todayD <= r.end);
+        const next = parsed.find(r => r.start > todayD);
+        const anchor = active ? todayD : (next?.start || null);
+        return { ...it, occ: anchor };
       }
       return { ...it, occ: nextOccurrence(it, todayD) };
     })
