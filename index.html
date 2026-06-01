@@ -273,10 +273,23 @@ function greekHolidaysForYear(year) {
       { id: `hol-${year}-hs`, title: 'Αγίου Πνεύματος',    subtitle: 'Holy Spirit',   date: offset(easter, 50)  },
     );
   }
-  return fixed.map(h => ({
-    ...h, type: 'holiday', system: true, addedBy: 'system', rsvps: {}, createdAt: 0,
-    notes: h.subtitle, location: '', link: '',
-  }));
+  return fixed.map(h => {
+    const d = parseYMD(h.date);
+    return {
+      ...h,
+      type: 'holiday',
+      system: true,
+      addedBy: 'system',
+      rsvps: {},
+      createdAt: 0,
+      notes: h.subtitle,
+      location: '',
+      link: '',
+      // Stamp month/day so the calendar still highlights them and Tsin Tsin works
+      month: d.getMonth() + 1,
+      day: d.getDate(),
+    };
+  });
 }
 function allHolidays() {
   const y = new Date().getFullYear();
